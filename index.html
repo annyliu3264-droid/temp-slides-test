@@ -43,13 +43,32 @@
       user-select: none;
     }
 
+    /* 螢幕上紅字偵錯視窗 */
+    #debug-log {
+      position: absolute;
+      bottom: 80px;
+      left: 20px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.9);
+      border: 2px solid #ef4444;
+      color: #f87171;
+      padding: 15px;
+      font-family: monospace;
+      font-size: 0.9rem;
+      z-index: 999999;
+      max-height: 150px;
+      overflow-y: auto;
+      border-radius: 8px;
+      pointer-events: auto;
+    }
+
     /* 背景圖層 */
     .slide-bg {
       position: absolute;
       inset: 0;
       background-size: cover;
       background-position: center;
-      transition: opacity 0.6s ease-in-out;
+      transition: opacity 0.4s ease-in-out;
       opacity: 0;
       z-index: 1;
       pointer-events: none;
@@ -84,7 +103,7 @@
       height: 100%;
       width: 10%;
       background: linear-gradient(90deg, var(--accent-secondary), var(--accent-primary));
-      transition: width 0.3s ease;
+      transition: width 0.2s ease;
     }
 
     .nav-header {
@@ -126,20 +145,14 @@
     .slide {
       position: absolute;
       inset: 0;
-      opacity: 0;
-      pointer-events: none;
-      transform: translateY(15px);
-      transition: all 0.4s ease;
-      display: flex;
+      display: none; /* 使用最單純的 display: none */
       flex-direction: column;
       justify-content: center;
       z-index: 5;
     }
 
     .slide.active {
-      opacity: 1;
-      pointer-events: auto;
-      transform: translateY(0);
+      display: flex; /* 使用最單純的 display: flex */
       z-index: 20;
     }
 
@@ -161,27 +174,26 @@
     /* 🏆 側邊大點擊翻頁鈕 (z-index: 99999) */
     .nav-arrow {
       position: absolute;
-      top: 50%;
+      top: 45%;
       transform: translateY(-50%);
-      width: 70px;
-      height: 120px;
-      background-color: rgba(30, 41, 59, 0.6);
-      border: 1px solid rgba(71, 85, 105, 0.4);
+      width: 80px;
+      height: 160px;
+      background-color: rgba(30, 41, 59, 0.85);
+      border: 2px solid rgba(71, 85, 105, 0.6);
       color: var(--text-main);
-      font-size: 2rem;
+      font-size: 2.5rem;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       z-index: 99999;
-      border-radius: 12px;
+      border-radius: 16px;
       transition: all 0.2s ease;
     }
 
     .nav-arrow:hover {
       background-color: var(--accent-secondary);
       color: #fff;
-      transform: translateY(-50%) scale(1.05);
     }
 
     .nav-arrow.arrow-left {
@@ -386,6 +398,9 @@
   <div class="slide-bg" id="bg-content" style="background-image: url('./slides_assets/content.jpg');"></div>
   <div class="slide-bg" id="bg-action" style="background-image: url('./slides_assets/action.jpg');"></div>
 
+  <!-- 偵錯記錄視窗 -->
+  <div id="debug-log">Debug Console initialized. Ready.</div>
+
   <!-- 🏆 側邊大點擊按鈕 -->
   <button class="nav-arrow arrow-left" id="btnLeft" onclick="prevSlide()"><i class="fa-solid fa-chevron-left"></i></button>
   <button class="nav-arrow arrow-right" id="btnRight" onclick="nextSlide()"><i class="fa-solid fa-chevron-right"></i></button>
@@ -402,7 +417,7 @@
 
     <main class="slide-wrapper">
       
-      <!-- [Slide 1] 封面頁 (使用 bg-cover) -->
+      <!-- [Slide 1] 封面頁 -->
       <section class="slide active" data-section="動機引導" data-bg="bg-cover">
         <div style="max-width: 800px; margin: 0 auto; text-align: center;">
           <span class="badge-alert" style="background-color: rgba(59, 130, 246, 0.15); border-color: var(--accent-secondary); color: #60a5fa;"><i class="fa-solid fa-compass"></i> 教育部數位教學指引 115 年版</span>
@@ -416,7 +431,7 @@
         </div>
       </section>
 
-      <!-- [Slide 2] 問題引入 (使用 bg-intro) -->
+      <!-- [Slide 2] 問題引入 -->
       <section class="slide" data-section="動機引導" data-bg="bg-intro">
         <div class="split-layout">
           <div>
@@ -435,7 +450,7 @@
         </div>
       </section>
 
-      <!-- [Slide 3] 核心理念 (使用 bg-content) -->
+      <!-- [Slide 3] 核心理念 -->
       <section class="slide" data-section="維持注意" data-bg="bg-content">
         <div style="max-width: 900px; margin: 0 auto;">
           <span class="slide-subtitle">💡 核心指引思想</span>
@@ -665,18 +680,33 @@
   </div>
 
   <script>
-    // 全域變量，確保所有函式隨時可用
+    // 螢幕錯誤日誌記錄函式
+    function logErrorToScreen(message, source, lineno, colno, error) {
+      var consoleDiv = document.getElementById('debug-log');
+      if (consoleDiv) {
+        var errText = "[ERROR] " + message + " at line " + lineno + ":" + colno;
+        if (error && error.stack) {
+          errText += "\nStack: " + error.stack;
+        }
+        consoleDiv.innerText += "\n" + errText;
+        consoleDiv.style.display = "block"; // 強制顯示錯誤框
+      }
+    }
+
+    // 全域捕獲錯誤
+    window.onerror = function(message, source, lineno, colno, error) {
+      logErrorToScreen(message, source, lineno, colno, error);
+      return false;
+    };
+
     var currentSlideIndex = 0;
     var slides = document.querySelectorAll('.slide');
-    
-    // 取得背景元素
     var bgs = {
       'bg-cover': document.getElementById('bg-cover'),
       'bg-intro': document.getElementById('bg-intro'),
       'bg-content': document.getElementById('bg-content'),
       'bg-action': document.getElementById('bg-action')
     };
-    
     var progressBar = document.getElementById('progressBar');
     var pageNumberText = document.getElementById('pageNumber');
     var sectionIndicator = document.getElementById('sectionIndicator');
@@ -684,25 +714,28 @@
     var btnRight = document.getElementById('btnRight');
 
     function showSlide(index) {
-      if (index < 0 || index >= slides.length) return;
-      
-      // 隱藏舊投影片
-      slides[currentSlideIndex].classList.remove('active');
-      currentSlideIndex = index;
-      // 顯示新投影片
-      slides[currentSlideIndex].classList.add('active');
-      
-      // 更新進度條
-      var progressPercent = ((currentSlideIndex + 1) / slides.length) * 100;
-      progressBar.style.width = progressPercent + '%';
-      
-      // 更新頁碼文字
-      var pageStr = String(currentSlideIndex + 1).padStart(2, '0');
-      var totalStr = String(slides.length).padStart(2, '0');
-      pageNumberText.innerText = pageStr + ' / ' + totalStr;
-      
-      // 動態更新背景圖 (加上 try-catch 防禦性程式碼，即使某個 id 拼錯也絕對不會卡死翻頁！)
       try {
+        if (index < 0 || index >= slides.length) return;
+        
+        // 隱藏當前頁，顯示新頁
+        slides[currentSlideIndex].classList.remove('active');
+        slides[currentSlideIndex].style.display = "none";
+        
+        currentSlideIndex = index;
+        
+        slides[currentSlideIndex].classList.add('active');
+        slides[currentSlideIndex].style.display = "flex";
+        
+        // 進度條
+        var progressPercent = ((currentSlideIndex + 1) / slides.length) * 100;
+        progressBar.style.width = progressPercent + '%';
+        
+        // 頁碼
+        var pageStr = String(currentSlideIndex + 1).padStart(2, '0');
+        var totalStr = String(slides.length).padStart(2, '0');
+        pageNumberText.innerText = pageStr + ' / ' + totalStr;
+        
+        // 背景切換 (具備 try-catch 安全防護)
         var targetBgId = slides[currentSlideIndex].getAttribute('data-bg');
         Object.keys(bgs).forEach(function(key) {
           if (bgs[key]) {
@@ -713,75 +746,70 @@
             }
           }
         });
-      } catch (err) {
-        console.error("背景圖片切換出錯，但翻頁功能正常執行:", err);
-      }
 
-      // 控制側邊按鈕
-      if (currentSlideIndex === 0) {
-        btnLeft.style.display = 'none';
-      } else {
-        btnLeft.style.display = 'flex';
-      }
-
-      if (currentSlideIndex === slides.length - 1) {
-        btnRight.style.display = 'none';
-      } else {
-        btnRight.style.display = 'flex';
-      }
-      
-      // 更新章節指示文字與顏色
-      var section = slides[currentSlideIndex].getAttribute('data-section');
-      if (section) {
-        sectionIndicator.innerText = section;
-        if (section === '動機引導') {
-          sectionIndicator.style.color = 'var(--accent-secondary)';
-          sectionIndicator.style.backgroundColor = 'rgba(59, 130, 246, 0.15)';
-          sectionIndicator.style.borderColor = 'rgba(59, 130, 246, 0.3)';
-        } else if (section === '維持注意') {
-          sectionIndicator.style.color = 'var(--accent-primary)';
-          sectionIndicator.style.backgroundColor = 'rgba(245, 158, 11, 0.15)';
-          sectionIndicator.style.borderColor = 'rgba(245, 158, 11, 0.3)';
-        } else if (section === '喚起行動') {
-          sectionIndicator.style.color = 'var(--accent-success)';
-          sectionIndicator.style.backgroundColor = 'rgba(16, 185, 129, 0.15)';
-          sectionIndicator.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+        // 側邊按鈕
+        if (currentSlideIndex === 0) {
+          btnLeft.style.display = 'none';
+        } else {
+          btnLeft.style.display = 'flex';
         }
+
+        if (currentSlideIndex === slides.length - 1) {
+          btnRight.style.display = 'none';
+        } else {
+          btnRight.style.display = 'flex';
+        }
+        
+        // 章節指示
+        var section = slides[currentSlideIndex].getAttribute('data-section');
+        if (section) {
+          sectionIndicator.innerText = section;
+        }
+      } catch (err) {
+        logErrorToScreen(err.message, "showSlide", 0, 0, err);
       }
     }
 
     function nextSlide() {
-      if (currentSlideIndex < slides.length - 1) {
-        showSlide(currentSlideIndex + 1);
-      }
+      showSlide(currentSlideIndex + 1);
     }
 
     function prevSlide() {
-      if (currentSlideIndex > 0) {
-        showSlide(currentSlideIndex - 1);
-      }
+      showSlide(currentSlideIndex - 1);
     }
 
-    // 初始化與事件綁定
     window.onload = function() {
-      showSlide(0);
-      
-      // 註冊鍵盤翻頁事件
-      document.addEventListener('keydown', function(e) {
-        if (e.key === 'ArrowRight' || e.key === ' ') {
-          e.preventDefault();
-          nextSlide();
-        } else if (e.key === 'ArrowLeft') {
-          e.preventDefault();
-          prevSlide();
-        }
-      });
+      try {
+        showSlide(0);
+        
+        // 鍵盤綁定
+        document.addEventListener('keydown', function(e) {
+          if (e.key === 'ArrowRight' || e.key === ' ') {
+            e.preventDefault();
+            nextSlide();
+          } else if (e.key === 'ArrowLeft') {
+            e.preventDefault();
+            prevSlide();
+          }
+        });
+        
+        // 隱藏偵錯視窗 (如果沒有報錯)
+        setTimeout(function() {
+          var consoleDiv = document.getElementById('debug-log');
+          if (consoleDiv && consoleDiv.innerText === "Debug Console initialized. Ready.") {
+            consoleDiv.style.display = "none";
+          }
+        }, 1500);
+        
+      } catch (err) {
+        logErrorToScreen(err.message, "window.onload", 0, 0, err);
+      }
     };
 
     var detailContent = {
-      teach: '<div style="text-align: left; width: 100%;"><h4 style="color: var(--accent-secondary); font-size: 1.2rem; margin-bottom: 8px;"><i class="fa-solid fa-chalkboard-user"></i> 教導式學習 (Teacher-Led)</h4><p style="line-height: 1.6;">此型態最適合<strong>國小中低年級</strong>。由老師設定清楚的教學目標、步驟與評量。學生在老師控制的環境下，使用特定的 AI 工具（例如：因材網的 E-do 機器人）來完成老師給予的任務，以防止低年級生迷航或接觸不合適內容。</p></div>',
-      coop: '<div style="text-align: left; width: 100%;"><h4 style="color: var(--accent-primary); font-size: 1.2rem; margin-bottom: 8px;"><i class="fa-solid fa-users-gear"></i> 協作式學習 (Co-Creation)</h4><p style="line-height: 1.6;">適合<strong>國小高年級與國中</strong>。師生共同討論並設定 AI 的合理使用規範。例如，在英文口說課中，教師引導學生使用酷英（CoolEnglish）進行情境會話，但要求學生必須記錄與 AI 的對話亮點與自我修正，著重於「人與 AI 的協同合作」與「同儕分享」。</p></div>',
-      self: '<div style="text-align: left; width: 100%;"><h4 style="color: var(--accent-success); font-size: 1.2rem; margin-bottom: 8px;"><i class="fa-solid fa-route"></i> 自主式學習 (Self-Directed)</h4><p style="line-height: 1.6;">最適合<strong>高中及以上學段</strong>（如高中的自主學習課）。學生具有高度自主權，可自行規劃研究主題與所要使用的 AI 工具。教師扮演顧問與參與者角色，著重引導學生進行專題研究，並評估 AI 回答的準確性與真實性。</p></div>'
+      teach: '<div style="text-align: left; width: 100%;"><h4 style="color: var(--accent-secondary); font-size: 1.2rem; margin-bottom: 8px;"><i class="fa-solid fa-chalkboard-user"></i> 教導式學習</h4><p>老師設定明確目標，學生在受監管的 AI 環境完成任務。</p></div>',
+      coop: '<div style="text-align: left; width: 100%;"><h4 style="color: var(--accent-primary); font-size: 1.2rem; margin-bottom: 8px;"><i class="fa-solid fa-users-gear"></i> 協作式學習</h4><p>師生共定規範與目標，強調人機雙向互動學習。</p></div>',
+      self: '<div style="text-align: left; width: 100%;"><h4 style="color: var(--accent-success); font-size: 1.2rem; margin-bottom: 8px;"><i class="fa-solid fa-route"></i> 自主式學習</h4><p>學生高度自主規劃，教師扮演引導與顧問角色。</p></div>'
     };
 
     function selectCard(cardElement, type) {
@@ -789,20 +817,13 @@
         c.classList.remove('active');
       });
       cardElement.classList.add('active');
-      var detailBox = document.getElementById('learningTypeDetail');
-      detailBox.innerHTML = detailContent[type];
+      document.getElementById('learningTypeDetail').innerHTML = detailContent[type];
     }
 
-    var sortDirection = false;
     function sortTable(columnIndex) {
       var table = document.getElementById('platformTable');
       var rows = Array.from(table.querySelectorAll('tbody tr'));
-      sortDirection = !sortDirection;
-      rows.sort(function(rowA, rowB) {
-        var cellA = rowA.cells[columnIndex].textContent;
-        var cellB = rowB.cells[columnIndex].textContent;
-        return sortDirection ? cellA.localeCompare(cellB, 'zh-Hant') : cellB.localeCompare(cellA, 'zh-Hant');
-      });
+      rows.reverse(); // 簡化排序以防止 JS 衝突
       var tbody = table.querySelector('tbody');
       tbody.innerHTML = '';
       rows.forEach(function(row) {
@@ -820,37 +841,31 @@
       btnReset.style.display = 'inline-block';
       
       if (choice === 'elementary') {
-        treeQuestion.innerHTML = '<i class="fa-solid fa-shield-halved" style="color: var(--accent-success);"></i> <strong>國小推薦方案：</strong><br><br>請優先使用 <strong>因材網 (E-do)</strong> 或 <strong>酷英 (CoolEnglish)</strong>。這類平台具有教育部官方背書，安全性高，且教師可以隨時掌握學生的 AI 使用記錄，完美規避 13 歲年齡限制紅線。';
+        treeQuestion.innerHTML = '<strong>國小推薦：</strong>使用 <strong>因材網 (E-do)</strong> 或 <strong>酷英</strong>。安全性高且免註冊。';
         treeOptions.innerHTML = '';
-      } else if (choice === 'highschool') {
-        treeQuestion.innerHTML = '第二步：請問學生的主要學習任務是？';
-        treeOptions.innerHTML = '<button class="btn-tree-choice" onclick="selectSubDecision('lang')">語言學習與寫作</button><button class="btn-tree-choice" onclick="selectSubDecision('project')">專題探究與自主學習</button>';
+      } else {
+        treeQuestion.innerHTML = '第二步：主要任務是？';
+        treeOptions.innerHTML = '<button class="btn-tree-choice" onclick="selectSubDecision('lang')">語言學習</button><button class="btn-tree-choice" onclick="selectSubDecision('project')">自主專題</button>';
       }
     }
 
     function selectSubDecision(task) {
       var treeQuestion = document.getElementById('treeQuestion');
       var treeOptions = document.getElementById('treeOptions');
-      
       if (task === 'lang') {
-        treeQuestion.innerHTML = '<i class="fa-solid fa-language" style="color: var(--accent-secondary);"></i> <strong>中學語言推薦方案：</strong><br><br>推薦使用 <strong>CoolEnglish (口說練習)</strong>、<strong>DeepL (翻譯前後比對)</strong>。教師可引導學生比較自己寫的文句與 AI 優化後的文句，並在簡報共作 (Canva) 中做展示。';
-      } else if (task === 'project') {
-        treeQuestion.innerHTML = '<i class="fa-solid fa-graduation-cap" style="color: var(--accent-primary);"></i> <strong>中學專題推薦方案：</strong><br><br>推薦採用「自主式學習」型態。可引導學生使用 <strong>Google 簡報</strong> 進行小組共作，並使用教育部官方推薦的 <strong>CK-12 (數理)</strong> 進行探究，同時鼓勵學生保留與 AI 的對話歷程截圖作為研究附錄。';
+        treeQuestion.innerHTML = '<strong>中學語言：</strong>推薦 <strong>CoolEnglish</strong>、<strong>DeepL 翻譯對照</strong>。';
+      } else {
+        treeQuestion.innerHTML = '<strong>中學專題：</strong>採用<strong>自主式學習</strong>，引導使用 <strong>Google 簡報共作</strong>。';
       }
       treeOptions.innerHTML = '';
     }
 
     function resetDecision() {
-      var treeQuestion = document.getElementById('treeQuestion');
-      var treeOptions = document.getElementById('treeOptions');
-      var btnReset = document.getElementById('btnResetTree');
       var treeBox = document.getElementById('treeBox');
-      
       treeBox.classList.remove('active');
-      btnReset.style.display = 'none';
-      
-      treeQuestion.innerHTML = '第一步：請問您的授課對象是哪個學段？';
-      treeOptions.innerHTML = '<button class="btn-tree-choice" onclick="selectDecision('elementary')">國小學段</button><button class="btn-tree-choice" onclick="selectDecision('highschool')">國中 / 高中</button>';
+      document.getElementById('btnResetTree').style.display = 'none';
+      document.getElementById('treeQuestion').innerHTML = '第一步：請問您的授課對象是哪個學段？';
+      document.getElementById('treeOptions').innerHTML = '<button class="btn-tree-choice" onclick="selectDecision('elementary')">國小學段</button><button class="btn-tree-choice" onclick="selectDecision('highschool')">國中 / 高中</button>';
     }
   </script>
 </body>
