@@ -402,7 +402,7 @@
 
     <main class="slide-wrapper">
       
-      <!-- [Slide 1] 封面頁 -->
+      <!-- [Slide 1] 封面頁 (使用 bg-cover) -->
       <section class="slide active" data-section="動機引導" data-bg="bg-cover">
         <div style="max-width: 800px; margin: 0 auto; text-align: center;">
           <span class="badge-alert" style="background-color: rgba(59, 130, 246, 0.15); border-color: var(--accent-secondary); color: #60a5fa;"><i class="fa-solid fa-compass"></i> 教育部數位教學指引 115 年版</span>
@@ -416,7 +416,7 @@
         </div>
       </section>
 
-      <!-- [Slide 2] 問題引入 -->
+      <!-- [Slide 2] 問題引入 (使用 bg-intro) -->
       <section class="slide" data-section="動機引導" data-bg="bg-intro">
         <div class="split-layout">
           <div>
@@ -435,7 +435,7 @@
         </div>
       </section>
 
-      <!-- [Slide 3] 核心理念 -->
+      <!-- [Slide 3] 核心理念 (使用 bg-content) -->
       <section class="slide" data-section="維持注意" data-bg="bg-content">
         <div style="max-width: 900px; margin: 0 auto;">
           <span class="slide-subtitle">💡 核心指引思想</span>
@@ -665,14 +665,18 @@
   </div>
 
   <script>
+    // 全域變量，確保所有函式隨時可用
     var currentSlideIndex = 0;
     var slides = document.querySelectorAll('.slide');
+    
+    // 取得背景元素
     var bgs = {
       'bg-cover': document.getElementById('bg-cover'),
       'bg-intro': document.getElementById('bg-intro'),
       'bg-content': document.getElementById('bg-content'),
       'bg-action': document.getElementById('bg-action')
     };
+    
     var progressBar = document.getElementById('progressBar');
     var pageNumberText = document.getElementById('pageNumber');
     var sectionIndicator = document.getElementById('sectionIndicator');
@@ -682,26 +686,38 @@
     function showSlide(index) {
       if (index < 0 || index >= slides.length) return;
       
+      // 隱藏舊投影片
       slides[currentSlideIndex].classList.remove('active');
       currentSlideIndex = index;
+      // 顯示新投影片
       slides[currentSlideIndex].classList.add('active');
       
+      // 更新進度條
       var progressPercent = ((currentSlideIndex + 1) / slides.length) * 100;
       progressBar.style.width = progressPercent + '%';
       
+      // 更新頁碼文字
       var pageStr = String(currentSlideIndex + 1).padStart(2, '0');
       var totalStr = String(slides.length).padStart(2, '0');
       pageNumberText.innerText = pageStr + ' / ' + totalStr;
       
-      var targetBgId = slides[currentSlideIndex].getAttribute('data-bg');
-      Object.keys(bgs).forEach(function(key) {
-        if (key === targetBgId) {
-          bgs[key].classList.add('active');
-        } else {
-          bgs[key].classList.remove('active');
-        }
-      });
+      // 動態更新背景圖 (加上 try-catch 防禦性程式碼，即使某個 id 拼錯也絕對不會卡死翻頁！)
+      try {
+        var targetBgId = slides[currentSlideIndex].getAttribute('data-bg');
+        Object.keys(bgs).forEach(function(key) {
+          if (bgs[key]) {
+            if (key === targetBgId) {
+              bgs[key].classList.add('active');
+            } else {
+              bgs[key].classList.remove('active');
+            }
+          }
+        });
+      } catch (err) {
+        console.error("背景圖片切換出錯，但翻頁功能正常執行:", err);
+      }
 
+      // 控制側邊按鈕
       if (currentSlideIndex === 0) {
         btnLeft.style.display = 'none';
       } else {
@@ -714,6 +730,7 @@
         btnRight.style.display = 'flex';
       }
       
+      // 更新章節指示文字與顏色
       var section = slides[currentSlideIndex].getAttribute('data-section');
       if (section) {
         sectionIndicator.innerText = section;
@@ -745,9 +762,11 @@
       }
     }
 
+    // 初始化與事件綁定
     window.onload = function() {
       showSlide(0);
       
+      // 註冊鍵盤翻頁事件
       document.addEventListener('keydown', function(e) {
         if (e.key === 'ArrowRight' || e.key === ' ') {
           e.preventDefault();
