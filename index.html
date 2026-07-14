@@ -12,8 +12,8 @@
   <style>
     :root {
       --bg-primary: #0f172a;
-      --bg-secondary: rgba(30, 41, 59, 0.75);
-      --bg-tertiary: rgba(51, 65, 85, 0.85);
+      --bg-secondary: rgba(30, 41, 59, 0.8);
+      --bg-tertiary: rgba(51, 65, 85, 0.9);
       --accent-primary: #f59e0b;
       --accent-secondary: #3b82f6;
       --accent-success: #10b981;
@@ -21,8 +21,8 @@
       --text-muted: #cbd5e1;
       --border-color: rgba(71, 85, 105, 0.5);
       
-      --fs-h1: 3.0rem;
-      --fs-h2: 2.0rem;
+      --fs-h1: 3.2rem;
+      --fs-h2: 2.1rem;
       --fs-body: 1.25rem;
       --fs-small: 0.95rem;
     }
@@ -43,32 +43,13 @@
       user-select: none;
     }
 
-    /* 螢幕上紅字偵錯視窗 */
-    #debug-log {
-      position: absolute;
-      bottom: 80px;
-      left: 20px;
-      right: 20px;
-      background: rgba(0, 0, 0, 0.9);
-      border: 2px solid #ef4444;
-      color: #f87171;
-      padding: 15px;
-      font-family: monospace;
-      font-size: 0.9rem;
-      z-index: 999999;
-      max-height: 150px;
-      overflow-y: auto;
-      border-radius: 8px;
-      pointer-events: auto;
-    }
-
-    /* 背景圖層 */
+    /* 背景圖層 - 徹底不干擾滑鼠點擊 */
     .slide-bg {
       position: absolute;
       inset: 0;
       background-size: cover;
       background-position: center;
-      transition: opacity 0.4s ease-in-out;
+      transition: opacity 0.5s ease-in-out;
       opacity: 0;
       z-index: 1;
       pointer-events: none;
@@ -87,6 +68,11 @@
       flex-direction: column;
       justify-content: space-between;
       z-index: 10;
+      pointer-events: none; /* 穿透本身，由內部子項目接收點擊 */
+    }
+
+    .top-bar, .nav-header, .slide-wrapper, .footer-bar {
+      pointer-events: auto; /* 恢復點擊 */
     }
 
     .top-bar {
@@ -145,15 +131,17 @@
     .slide {
       position: absolute;
       inset: 0;
-      display: none; /* 使用最單純的 display: none */
+      display: none;
       flex-direction: column;
       justify-content: center;
       z-index: 5;
+      pointer-events: none; /* 穿透，確保下一層按鈕也能點 */
     }
 
     .slide.active {
-      display: flex; /* 使用最單純的 display: flex */
+      display: flex;
       z-index: 20;
+      pointer-events: auto; /* 啟動的投影片內容可以點擊 */
     }
 
     .footer-bar {
@@ -171,43 +159,45 @@
       letter-spacing: 0.1em;
     }
 
-    /* 🏆 側邊大點擊翻頁鈕 (z-index: 99999) */
+    /* 🏆 置於頂層、加寬的大側邊翻頁按鈕區 (z-index: 99999) */
     .nav-arrow {
       position: absolute;
-      top: 45%;
+      top: 50%;
       transform: translateY(-50%);
-      width: 80px;
-      height: 160px;
-      background-color: rgba(30, 41, 59, 0.85);
-      border: 2px solid rgba(71, 85, 105, 0.6);
+      width: 90px;
+      height: 180px;
+      background-color: rgba(30, 41, 59, 0.7);
+      border: 2px solid rgba(71, 85, 105, 0.5);
       color: var(--text-main);
       font-size: 2.5rem;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 99999;
+      z-index: 99999; /* 最最上層 */
       border-radius: 16px;
       transition: all 0.2s ease;
+      pointer-events: auto; /* 保證必能點擊 */
     }
 
     .nav-arrow:hover {
       background-color: var(--accent-secondary);
+      border-color: var(--accent-secondary);
       color: #fff;
     }
 
     .nav-arrow.arrow-left {
-      left: 20px;
+      left: 10px;
     }
 
     .nav-arrow.arrow-right {
-      right: 20px;
+      right: 10px;
     }
 
     .slide-title {
       font-size: var(--fs-h1);
       font-weight: 900;
-      margin-bottom: 20px;
+      margin-bottom: 24px;
       line-height: 1.25;
       background: linear-gradient(135deg, #ffffff 40%, #cbd5e1 100%);
       -webkit-background-clip: text;
@@ -386,7 +376,8 @@
       align-items: center;
       gap: 8px;
       text-decoration: none;
-      margin-top: 20px;
+      margin-top: 25px; /* 下移避免遮擋 */
+      pointer-events: auto;
     }
   </style>
 </head>
@@ -398,10 +389,7 @@
   <div class="slide-bg" id="bg-content" style="background-image: url('./slides_assets/content.jpg');"></div>
   <div class="slide-bg" id="bg-action" style="background-image: url('./slides_assets/action.jpg');"></div>
 
-  <!-- 偵錯記錄視窗 -->
-  <div id="debug-log">Debug Console initialized. Ready.</div>
-
-  <!-- 🏆 側邊大點擊按鈕 -->
+  <!-- 🏆 側邊大點擊按鈕 (z-index 99999) -->
   <button class="nav-arrow arrow-left" id="btnLeft" onclick="prevSlide()"><i class="fa-solid fa-chevron-left"></i></button>
   <button class="nav-arrow arrow-right" id="btnRight" onclick="nextSlide()"><i class="fa-solid fa-chevron-right"></i></button>
 
@@ -425,6 +413,7 @@
           <p style="font-size: 1.35rem; color: var(--text-muted); margin-bottom: 30px; font-weight: 300;">
             探索如何帶領國小至高中學生在課堂中與 AI 安全協作
           </p>
+          <!-- 加上 onclick 行為 -->
           <button class="btn-cta" onclick="nextSlide()">
             開始探索 <i class="fa-solid fa-arrow-right"></i>
           </button>
@@ -438,7 +427,7 @@
             <span class="slide-subtitle">🤔 面臨的現場挑戰</span>
             <h2 class="slide-title">當 AI 唾手可得，<br>孩子們的腦袋會變空嗎？</h2>
             <p style="font-size: 1.2rem; line-height: 1.7; color: var(--text-muted);">
-              「學生如果全部丟給 AI 去做，再給我一個漂亮的作品，但整個過程他只是操作流程，事後腦袋還是空空的怎麼辦？」
+              「學生如果全部丟給 AI 去做，再給我一個作品，但整個過程他只是操作流程，事後腦袋還是空空的怎麼辦？」
             </p>
             <div class="highlight-box">
               <p style="font-weight: 600; color: var(--accent-primary);">
@@ -680,25 +669,6 @@
   </div>
 
   <script>
-    // 螢幕錯誤日誌記錄函式
-    function logErrorToScreen(message, source, lineno, colno, error) {
-      var consoleDiv = document.getElementById('debug-log');
-      if (consoleDiv) {
-        var errText = "[ERROR] " + message + " at line " + lineno + ":" + colno;
-        if (error && error.stack) {
-          errText += "\nStack: " + error.stack;
-        }
-        consoleDiv.innerText += "\n" + errText;
-        consoleDiv.style.display = "block"; // 強制顯示錯誤框
-      }
-    }
-
-    // 全域捕獲錯誤
-    window.onerror = function(message, source, lineno, colno, error) {
-      logErrorToScreen(message, source, lineno, colno, error);
-      return false;
-    };
-
     var currentSlideIndex = 0;
     var slides = document.querySelectorAll('.slide');
     var bgs = {
@@ -714,28 +684,28 @@
     var btnRight = document.getElementById('btnRight');
 
     function showSlide(index) {
+      if (index < 0 || index >= slides.length) return;
+      
+      // display: none / flex
+      slides[currentSlideIndex].classList.remove('active');
+      slides[currentSlideIndex].style.display = "none";
+      
+      currentSlideIndex = index;
+      
+      slides[currentSlideIndex].classList.add('active');
+      slides[currentSlideIndex].style.display = "flex";
+      
+      // 進度條
+      var progressPercent = ((currentSlideIndex + 1) / slides.length) * 100;
+      progressBar.style.width = progressPercent + '%';
+      
+      // 頁碼
+      var pageStr = String(currentSlideIndex + 1).padStart(2, '0');
+      var totalStr = String(slides.length).padStart(2, '0');
+      pageNumberText.innerText = pageStr + ' / ' + totalStr;
+      
+      // 背景切換
       try {
-        if (index < 0 || index >= slides.length) return;
-        
-        // 隱藏當前頁，顯示新頁
-        slides[currentSlideIndex].classList.remove('active');
-        slides[currentSlideIndex].style.display = "none";
-        
-        currentSlideIndex = index;
-        
-        slides[currentSlideIndex].classList.add('active');
-        slides[currentSlideIndex].style.display = "flex";
-        
-        // 進度條
-        var progressPercent = ((currentSlideIndex + 1) / slides.length) * 100;
-        progressBar.style.width = progressPercent + '%';
-        
-        // 頁碼
-        var pageStr = String(currentSlideIndex + 1).padStart(2, '0');
-        var totalStr = String(slides.length).padStart(2, '0');
-        pageNumberText.innerText = pageStr + ' / ' + totalStr;
-        
-        // 背景切換 (具備 try-catch 安全防護)
         var targetBgId = slides[currentSlideIndex].getAttribute('data-bg');
         Object.keys(bgs).forEach(function(key) {
           if (bgs[key]) {
@@ -746,27 +716,27 @@
             }
           }
         });
-
-        // 側邊按鈕
-        if (currentSlideIndex === 0) {
-          btnLeft.style.display = 'none';
-        } else {
-          btnLeft.style.display = 'flex';
-        }
-
-        if (currentSlideIndex === slides.length - 1) {
-          btnRight.style.display = 'none';
-        } else {
-          btnRight.style.display = 'flex';
-        }
-        
-        // 章節指示
-        var section = slides[currentSlideIndex].getAttribute('data-section');
-        if (section) {
-          sectionIndicator.innerText = section;
-        }
       } catch (err) {
-        logErrorToScreen(err.message, "showSlide", 0, 0, err);
+        console.error(err);
+      }
+
+      // 側邊按鈕
+      if (currentSlideIndex === 0) {
+        btnLeft.style.display = 'none';
+      } else {
+        btnLeft.style.display = 'flex';
+      }
+
+      if (currentSlideIndex === slides.length - 1) {
+        btnRight.style.display = 'none';
+      } else {
+        btnRight.style.display = 'flex';
+      }
+      
+      // 章節
+      var section = slides[currentSlideIndex].getAttribute('data-section');
+      if (section) {
+        sectionIndicator.innerText = section;
       }
     }
 
@@ -779,31 +749,17 @@
     }
 
     window.onload = function() {
-      try {
-        showSlide(0);
-        
-        // 鍵盤綁定
-        document.addEventListener('keydown', function(e) {
-          if (e.key === 'ArrowRight' || e.key === ' ') {
-            e.preventDefault();
-            nextSlide();
-          } else if (e.key === 'ArrowLeft') {
-            e.preventDefault();
-            prevSlide();
-          }
-        });
-        
-        // 隱藏偵錯視窗 (如果沒有報錯)
-        setTimeout(function() {
-          var consoleDiv = document.getElementById('debug-log');
-          if (consoleDiv && consoleDiv.innerText === "Debug Console initialized. Ready.") {
-            consoleDiv.style.display = "none";
-          }
-        }, 1500);
-        
-      } catch (err) {
-        logErrorToScreen(err.message, "window.onload", 0, 0, err);
-      }
+      showSlide(0);
+      
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'ArrowRight' || e.key === ' ') {
+          e.preventDefault();
+          nextSlide();
+        } else if (e.key === 'ArrowLeft') {
+          e.preventDefault();
+          prevSlide();
+        }
+      });
     };
 
     var detailContent = {
@@ -823,7 +779,7 @@
     function sortTable(columnIndex) {
       var table = document.getElementById('platformTable');
       var rows = Array.from(table.querySelectorAll('tbody tr'));
-      rows.reverse(); // 簡化排序以防止 JS 衝突
+      rows.reverse();
       var tbody = table.querySelector('tbody');
       tbody.innerHTML = '';
       rows.forEach(function(row) {
@@ -860,6 +816,7 @@
       treeOptions.innerHTML = '';
     }
 
+    var dummy = 0;
     function resetDecision() {
       var treeBox = document.getElementById('treeBox');
       treeBox.classList.remove('active');
